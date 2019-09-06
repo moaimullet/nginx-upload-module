@@ -3752,7 +3752,8 @@ ngx_http_upload_validate_session_id(ngx_str_t *session_id) {
 
     while(p != q) {
         if(!((*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')
-            || *p == '_' || *p == '-'))
+            /*|| *p == '_' || *p == '-')) small hack*/
+	    || *p == '_' || *p == '-' || *p == '.')) 
         {
             return NGX_ERROR;
         }
