@@ -1441,6 +1441,16 @@ static ngx_int_t ngx_http_upload_start_handler(ngx_http_upload_ctx_t *u) { /* {{
                                "hashed path of state file: %s", state_file->name.data);
             }
 
+		
+            if (ngx_create_dir(path->name.data, 0700) == NGX_FILE_ERROR) {
+                  err = ngx_errno;
+                  if (err != NGX_EEXIST) {
+			  ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno,
+                              "failed to create upload directory \"%V\"", &path->name);
+                          return NGX_UPLOAD_IOERROR;
+                  }
+	    }
+
             file->fd = ngx_open_file(file->name.data, NGX_FILE_WRONLY, NGX_FILE_CREATE_OR_OPEN, ulcf->store_access);
 
             if (file->fd == NGX_INVALID_FILE) {
@@ -1465,6 +1475,16 @@ static ngx_int_t ngx_http_upload_start_handler(ngx_http_upload_ctx_t *u) { /* {{
                 ngx_log_debug1(NGX_LOG_DEBUG_CORE, file->log, 0,
                                "hashed path: %s", file->name.data);
 
+                if (ngx_create_dir(path->name.data, 0700) == NGX_FILE_ERROR) {
+                    err = ngx_errno;
+                    if (err != NGX_EEXIST) {
+			  ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno,
+                              "failed to create upload directory \"%V\"", &path->name);
+                          return NGX_UPLOAD_IOERROR;
+                    }
+	      }
+		    
+		    
                 file->fd = ngx_open_tempfile(file->name.data, 1, ulcf->store_access);
 
                 if (file->fd != NGX_INVALID_FILE) {
