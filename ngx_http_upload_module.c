@@ -1447,7 +1447,7 @@ static ngx_int_t ngx_http_upload_start_handler(ngx_http_upload_ctx_t *u) { /* {{
                 err = ngx_errno;
 
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno,
-                              "failed to create output file \"%V\" for \"%V\"", &file->name, &u->file_name);
+                              "failed to create output file \"%V\" for \"%V\" in \"%V\"", &file->name, &u->file_name, &u->store_path);
                 return NGX_UPLOAD_IOERROR;
             }
 
@@ -1480,7 +1480,7 @@ static ngx_int_t ngx_http_upload_start_handler(ngx_http_upload_ctx_t *u) { /* {{
                 }
 
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno,
-                              "failed to create output file \"%V\" for \"%V\"", &file->name, &u->file_name);
+                              "failed to create output file \"%V\" for \"%V\" in \"%V\"", &file->name, &u->file_name, &u->store_path);
                 return NGX_UPLOAD_IOERROR;
             }
         }
