@@ -1384,7 +1384,7 @@ static ngx_int_t ngx_http_upload_start_handler(ngx_http_upload_ctx_t *u) { /* {{
     ngx_err_t   err;
     ngx_http_upload_field_template_t    *t;
     ngx_http_upload_field_filter_t    *f;
-    ngx_str_t   field_name, field_value;
+    ngx_str_t   field_name, field_value, path_mkdir;
     ngx_uint_t  pass_field;
     ngx_upload_cleanup_t  *ucln;
 
@@ -1399,11 +1399,20 @@ static ngx_int_t ngx_http_upload_start_handler(ngx_http_upload_ctx_t *u) { /* {{
         file->name.len = path->name.len + 1 + path->len + (u->session_id.len != 0 ? u->session_id.len : 10);
 
         file->name.data = ngx_palloc(u->request->pool, file->name.len + 1);
+	    
+        path_mkdir.len = path->name.len;
+
+        path_mkdir.data = ngx_pcalloc(u->request->pool, path_mkdir.len + 1);	    
 
         if(file->name.data == NULL)
             return NGX_UPLOAD_NOMEM;
-
+	    
+        if(path_mkdir.data == NULL)
+            return NGX_UPLOAD_NOMEM;
+	    
         ngx_memcpy(file->name.data, path->name.data, path->name.len);
+	    
+        ngx_memcpy(path_mkdir.data, path->name.data, path->name.len);
 
         file->log = r->connection->log;
 
@@ -1442,11 +1451,11 @@ static ngx_int_t ngx_http_upload_start_handler(ngx_http_upload_ctx_t *u) { /* {{
             }
 
 		
-            if (ngx_create_dir(path->name.data, 0700) == NGX_FILE_ERROR) {
+            if (ngx_create_dir(path_mkdir.data, 0700) == NGX_FILE_ERROR) {
                   err = ngx_errno;
                   if (err != NGX_EEXIST) {
 			  ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno,
-                              "failed to create upload directory \"%V\"", &path->name);
+                              "failed to create upload directory \"%s\"", path_mkdir.data);
                           return NGX_UPLOAD_IOERROR;
                   }
 	    }
@@ -1475,11 +1484,11 @@ static ngx_int_t ngx_http_upload_start_handler(ngx_http_upload_ctx_t *u) { /* {{
                 ngx_log_debug1(NGX_LOG_DEBUG_CORE, file->log, 0,
                                "hashed path: %s", file->name.data);
 
-                if (ngx_create_dir(path->name.data, 0700) == NGX_FILE_ERROR) {
+                if (ngx_create_dir(path_mkdir.data, 0700) == NGX_FILE_ERROR) {
                     err = ngx_errno;
                     if (err != NGX_EEXIST) {
 			  ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno,
-                              "failed to create upload directory \"%V\"", &path->name);
+                              "failed to create upload directory \"%s\"", path_mkdir.data);
                           return NGX_UPLOAD_IOERROR;
                     }
 	      }
