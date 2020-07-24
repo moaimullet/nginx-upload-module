@@ -58,6 +58,15 @@ typedef ngx_md5_t MD5_CTX;
 #define FILENAME_STRING                         "filename=\""
 #define FIELDNAME_STRING                        "name=\""
 #define BYTES_UNIT_STRING                       "bytes "
+#define DELETE_PATH_DOT                         "."
+#define DELETE_PATH_SLASH                       "/"
+#define DELETE_PATH_BACKSLASH                   "\\"
+#define DELETE_PATH_PIPE                        "|"
+#define DELETE_PATH_SEMICOLON                   ";"
+#define DELETE_PATH_SHARP                       "#"
+#define DELETE_PATH_TILDE                       "~"
+#define DELETE_PATH_DOLLAR                      "$"
+#define DELETE_PATH_AMP                         "&"
 
 #define NGX_UPLOAD_MALFORMED    -11
 #define NGX_UPLOAD_NOMEM        -12
@@ -295,6 +304,11 @@ static ngx_int_t ngx_http_upload_test_expect(ngx_http_request_t *r);
 static void ngx_http_upload_read_event_handler(ngx_http_request_t *r);
 #endif
 static ngx_int_t ngx_http_upload_handler(ngx_http_request_t *r);
+
+static ngx_table_elt_t * 
+search_headers_in(ngx_http_request_t *r, u_char *name, size_t len);
+static ngx_int_t ngx_http_upload_delete_handler(ngx_http_request_t *r, ngx_http_headers_in_t *headers_in);
+
 static ngx_int_t ngx_http_upload_options_handler(ngx_http_request_t *r);
 static ngx_int_t ngx_http_upload_body_handler(ngx_http_request_t *r);
 
@@ -800,6 +814,9 @@ ngx_http_upload_handler(ngx_http_request_t *r)
     ngx_http_upload_ctx_t     *u;
     ngx_int_t                 rc;
 
+    if(r->method & NGX_HTTP_DELETE)
+        return ngx_http_upload_delete_handler(r, &r->headers_in);   
+	
     if(r->method & NGX_HTTP_OPTIONS)
         return ngx_http_upload_options_handler(r);
 
@@ -1142,6 +1159,171 @@ ngx_http_upload_eval_state_path(ngx_http_request_t *r) {
 
     return NGX_OK;
 } /* }}} */
+
+
+static ngx_table_elt_t *
+search_headers_in(ngx_http_request_t *r, u_char *name, size_t len) {
+    ngx_list_part_t            *part;
+    ngx_table_elt_t            *h;
+    ngx_uint_t                  i;
+
+    /*
+    Get the first part of the list. There is usual only one part.
+    */
+    part = &r->headers_in.headers.part;
+    h = part->elts;
+
+    /*
+    Headers list array may consist of more than one part,
+    so loop through all of it
+    */
+    for (i = 0; /* void */ ; i++) {
+        if (i >= part->nelts) {
+            if (part->next == NULL) {
+                /* The last part, search is done. */
+                break;
+            }
+
+            part = part->next;
+            h = part->elts;
+            i = 0;
+        }
+
+        /*
+        Just compare the lengths and then the names case insensitively.
+        */
+        if (len != h[i].key.len || ngx_strcasecmp(name, h[i].key.data) != 0) {
+            /* This header doesn't match. */
+            continue;
+        }
+
+        /*
+        Ta-da, we got one!
+        Note, we'v stop the search at the first matched header
+        while more then one header may fit.
+        */
+        return &h[i];
+    }
+
+    /*
+    No headers was found
+    */
+    return NULL;
+}
+
+static ngx_int_t ngx_http_upload_delete_handler(ngx_http_request_t *r, ngx_http_headers_in_t *headers_in) { /* {{{ */
+  
+        
+     ngx_table_elt_t          *folder;
+     ngx_table_elt_t          *filename;
+     ngx_http_upload_ctx_t     *u;
+     ngx_int_t                 rc;     
+     ngx_str_t   rmpath, rmfilename;
+     
+     folder = search_headers_in(r,(u_char *) "Folder", sizeof("Folder") - 1);   
+     if (folder == NULL) {
+         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                       "\"Folder\" header is NULL");
+         return NGX_HTTP_BAD_REQUEST;
+     } else if(!ngx_strncmp(DELETE_PATH_DOT, (char*)folder->value.data, 1)
+         || !strncasecmp(DELETE_PATH_SLASH, (char*)folder->value.data, 1) || !strncasecmp(DELETE_PATH_BACKSLASH, (char*)folder->value.data, 1) || !strncasecmp(DELETE_PATH_PIPE, (char*)folder->value.data, 1) || !strncasecmp(DELETE_PATH_SEMICOLON, (char*)folder->value.data, 1) || !strncasecmp(DELETE_PATH_SHARP, (char*)folder->value.data, 1) || !strncasecmp(DELETE_PATH_TILDE, (char*)folder->value.data, 1) || !strncasecmp(DELETE_PATH_DOLLAR, (char*)folder->value.data, 1) || !strncasecmp(DELETE_PATH_AMP, (char*)folder->value.data, 1))
+     {
+         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                       "Folder header is malformed - \"%s\"", folder->value.data);
+         return NGX_HTTP_BAD_REQUEST;
+     }
+     
+     filename = search_headers_in(r,(u_char *) "Filename", sizeof("Filename") - 1);
+     if (filename == NULL) {
+         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                       "\"Filename\" header is NULL");
+         return NGX_HTTP_BAD_REQUEST;
+     } else if(!ngx_strncmp(DELETE_PATH_DOT, (char*)filename->value.data, 1)
+         || !strncasecmp(DELETE_PATH_SLASH, (char*)filename->value.data, 1) || !strncasecmp(DELETE_PATH_BACKSLASH, (char*)filename->value.data, 1) || !strncasecmp(DELETE_PATH_PIPE, (char*)filename->value.data, 1) || !strncasecmp(DELETE_PATH_SEMICOLON, (char*)filename->value.data, 1) || !strncasecmp(DELETE_PATH_SHARP, (char*)filename->value.data, 1) || !strncasecmp(DELETE_PATH_TILDE, (char*)filename->value.data, 1) || !strncasecmp(DELETE_PATH_DOLLAR, (char*)filename->value.data, 1) || !strncasecmp(DELETE_PATH_AMP, (char*)filename->value.data, 1))
+     {
+         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                       "Filename header is malformed - \"%s\"", filename->value.data);
+         return NGX_HTTP_BAD_REQUEST;
+     }
+    
+     u = ngx_http_get_module_ctx(r, ngx_http_upload_module);     
+     if (u == NULL) {
+         u = ngx_pcalloc(r->pool, sizeof(ngx_http_upload_ctx_t));
+         if (u == NULL) {
+             return NGX_HTTP_INTERNAL_SERVER_ERROR;
+         }
+         ngx_http_set_ctx(r, u, ngx_http_upload_module);
+     }
+     
+     if (u == NULL) {
+         ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno,
+                              "ngx_http_get_module_ctx is NULL");
+     }
+     
+     
+     rc = ngx_http_upload_eval_path(r);
+     if(rc != NGX_OK) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno,
+                              "rc is not OK");
+        upload_shutdown_ctx(u);
+        return rc;
+     }
+     
+     ngx_path_t  *path = u->store_path;
+     
+     //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno,"config store path - \"%s\"", path->name.data);
+
+     rmfilename.len = filename->value.len;
+     rmfilename.data = ngx_pcalloc(r->pool, rmfilename.len + 1);
+ 
+     if(rmfilename.data == NULL)
+         return NGX_UPLOAD_NOMEM;
+     
+     //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "before ngx_memcpy filename_header - \"%s\"", filename->value.data);
+  
+     ngx_memcpy(rmfilename.data, filename->value.data, rmfilename.len);
+     
+     //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "rmfilename - \"%s\"  of filename_header - \"%V\"", rmfilename.data, &filename->value);
+          
+     rmpath.len = path->name.len + rmfilename.len;
+     rmpath.data = ngx_pcalloc(r->pool, rmpath.len + 2);
+     
+     if(rmpath.data == NULL)
+         return NGX_UPLOAD_NOMEM;     
+     
+     ngx_memcpy(rmpath.data, path->name.data, path->name.len);
+    
+     //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "finished cleanup of rmpath from folder \"%s\"", rmpath.data);
+ 
+     ngx_memcpy(rmpath.data + path->name.len, (u_char *) "/", 1);
+     ngx_memcpy(rmpath.data + path->name.len + 1, rmfilename.data, rmfilename.len);
+     
+     //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "finished cleanup of full rmpath \"%s\"  of filename -  \"%s\"", rmpath.data, rmfilename.data);
+     
+     if(ngx_delete_file(rmpath.data) == NGX_FILE_ERROR) { 
+                    ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno
+                        , "failed to remove destination file \"%s\""
+                        , rmpath.data
+                        );
+                    return NGX_HTTP_BAD_REQUEST;
+                    
+     }else
+         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0
+         , "finished cleanup of file \"%s\""
+         , rmpath.data
+     );
+
+
+     r->headers_out.status = NGX_HTTP_OK;
+     r->header_only = 1;
+     r->headers_out.content_length_n = 0;
+     r->allow_ranges = 0;
+     
+     //ngx_destroy_pool(r->pool);
+     
+     return ngx_http_send_header(r);
+} /* }}} */
+
 
 static ngx_int_t ngx_http_upload_options_handler(ngx_http_request_t *r) { /* {{{ */
     ngx_http_upload_loc_conf_t *ulcf;
