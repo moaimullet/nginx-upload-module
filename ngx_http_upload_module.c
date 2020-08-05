@@ -307,6 +307,7 @@ static ngx_int_t ngx_http_upload_handler(ngx_http_request_t *r);
 
 static ngx_table_elt_t * 
 search_headers_in(ngx_http_request_t *r, u_char *name, size_t len);
+static ngx_int_t ngx_http_upload_validate_session_id(ngx_str_t *session_id);
 static ngx_int_t ngx_http_upload_delete_handler(ngx_http_request_t *r, ngx_http_headers_in_t *headers_in);
 
 static ngx_int_t ngx_http_upload_options_handler(ngx_http_request_t *r);
@@ -1225,8 +1226,7 @@ static ngx_int_t ngx_http_upload_delete_handler(ngx_http_request_t *r, ngx_http_
          ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                        "\"Folder\" header is NULL");
          return NGX_HTTP_BAD_REQUEST;
-     } else if(!ngx_strncmp(DELETE_PATH_DOT, (char*)folder->value.data, 1)
-         || !strncasecmp(DELETE_PATH_SLASH, (char*)folder->value.data, 1) || !strncasecmp(DELETE_PATH_BACKSLASH, (char*)folder->value.data, 1) || !strncasecmp(DELETE_PATH_PIPE, (char*)folder->value.data, 1) || !strncasecmp(DELETE_PATH_SEMICOLON, (char*)folder->value.data, 1) || !strncasecmp(DELETE_PATH_SHARP, (char*)folder->value.data, 1) || !strncasecmp(DELETE_PATH_TILDE, (char*)folder->value.data, 1) || !strncasecmp(DELETE_PATH_DOLLAR, (char*)folder->value.data, 1) || !strncasecmp(DELETE_PATH_AMP, (char*)folder->value.data, 1))
+     } else if(ngx_http_upload_validate_session_id(&folder->value) != NGX_OK)
      {
          ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                        "Folder header is malformed - \"%s\"", folder->value.data);
@@ -1238,8 +1238,7 @@ static ngx_int_t ngx_http_upload_delete_handler(ngx_http_request_t *r, ngx_http_
          ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                        "\"Filename\" header is NULL");
          return NGX_HTTP_BAD_REQUEST;
-     } else if(!ngx_strncmp(DELETE_PATH_DOT, (char*)filename->value.data, 1)
-         || !strncasecmp(DELETE_PATH_SLASH, (char*)filename->value.data, 1) || !strncasecmp(DELETE_PATH_BACKSLASH, (char*)filename->value.data, 1) || !strncasecmp(DELETE_PATH_PIPE, (char*)filename->value.data, 1) || !strncasecmp(DELETE_PATH_SEMICOLON, (char*)filename->value.data, 1) || !strncasecmp(DELETE_PATH_SHARP, (char*)filename->value.data, 1) || !strncasecmp(DELETE_PATH_TILDE, (char*)filename->value.data, 1) || !strncasecmp(DELETE_PATH_DOLLAR, (char*)filename->value.data, 1) || !strncasecmp(DELETE_PATH_AMP, (char*)filename->value.data, 1))
+     } else if(ngx_http_upload_validate_session_id(&filename->value) != NGX_OK)
      {
          ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                        "Filename header is malformed - \"%s\"", filename->value.data);
