@@ -2013,27 +2013,28 @@ static void ngx_http_upload_finish_handler(ngx_http_upload_ctx_t *u) { /* {{{ */
                         if(h != NULL) {
                             if (bufsize == 65) {
                                 char buf[65];
-                                fgets(buf, bufsize, fp);
-                                hash.len = sizeof(buf) - 1;
-                                hash.data = ngx_pcalloc(r->pool, hash.len + 1);
-                                ngx_memcpy(hash.data, buf, sizeof(buf));
+				if (fgets(buf, bufsize, fp) != NULL) {
+                                    hash.len = sizeof(buf) - 1;
+                                    hash.data = ngx_pcalloc(r->pool, hash.len + 1);
+                                    ngx_memcpy(hash.data, buf, sizeof(buf));
                                 
-                                h->hash = 1;
-                                h->value = hash;
-                                ngx_str_set(&h->key, "GOST-Hash");
-                                //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "hash.len is - \"%i\", h->value.len - \"%i\"   ", hash.len, h->value.len);
+                                    h->hash = 1;
+                                    h->value = hash;
+                                    ngx_str_set(&h->key, "GOST-Hash");
+                                    //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "hash.len is - \"%i\", h->value.len - \"%i\"   ", hash.len, h->value.len);
+				}
                               } else {
                                 char buf[129];
-                                fgets(buf, bufsize, fp);
-                                hash.len = sizeof(buf) - 1;
-                                hash.data = ngx_pcalloc(r->pool, hash.len + 1);
-                                ngx_memcpy(hash.data, buf, sizeof(buf));
+				if (fgets(buf, bufsize, fp) != NULL) {
+                                    hash.len = sizeof(buf) - 1;
+                                    hash.data = ngx_pcalloc(r->pool, hash.len + 1);
+                                    ngx_memcpy(hash.data, buf, sizeof(buf));
                                 
-                                h->hash = 1;
-                                h->value = hash;
-                                ngx_str_set(&h->key, "GOST-Hash");
-                                //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "hash.len is - \"%i\", h->value.len - \"%i\"   ", hash.len, h->value.len);
-
+                                    h->hash = 1;
+                                    h->value = hash;
+                                    ngx_str_set(&h->key, "GOST-Hash");
+                                    //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "hash.len is - \"%i\", h->value.len - \"%i\"   ", hash.len, h->value.len);
+				}
                             }  
 
                         //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "header_value -  \"%V\", value.len - \"%i\", value.key - \"%V\"", 
