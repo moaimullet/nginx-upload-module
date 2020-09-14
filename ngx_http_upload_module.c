@@ -1948,14 +1948,14 @@ static void ngx_http_upload_finish_handler(ngx_http_upload_ctx_t *u) { /* {{{ */
                     
                     ngx_memcpy(mode.data, header_mode->value.data, mode.len);
                     command.len = sizeof(CPROCSP_PATH) - 1;
-                    command.data = ngx_pcalloc(r->pool, command.len);
+                    command.data = ngx_pcalloc(r->pool, command.len  + 1);
                 
                 if(!ngx_strncasecmp(mode.data, (u_char*) GR3411_2012_256,
                     sizeof(GR3411_2012_256) - 1)) {
                     
 
                     command.len = sizeof(CPROCSP_PATH) - 1 + file->name.len + sizeof(ARG_GR3411_2012_256) - 1;
-                    command.data = ngx_pcalloc(r->pool, command.len);
+                    command.data = ngx_pcalloc(r->pool, command.len + 1);
                     ngx_memcpy(command.data, (u_char *)  CPROCSP_PATH, sizeof(CPROCSP_PATH) - 1);
                     ngx_memcpy(command.data + sizeof(CPROCSP_PATH) - 1, file->name.data, file->name.len + 1 );
                     ngx_memcpy(command.data + sizeof(CPROCSP_PATH) + file->name.len - 1, (u_char *)  ARG_GR3411_2012_256, sizeof(ARG_GR3411_2012_256) - 1);
@@ -1967,7 +1967,7 @@ static void ngx_http_upload_finish_handler(ngx_http_upload_ctx_t *u) { /* {{{ */
                     sizeof(GR3411_2012_512) - 1)) {
                     
                     command.len = sizeof(CPROCSP_PATH) - 1 + file->name.len + sizeof(ARG_GR3411_2012_512) - 1;
-                    command.data = ngx_pcalloc(r->pool, command.len);     
+                    command.data = ngx_pcalloc(r->pool, command.len + 1);     
                     ngx_memcpy(command.data, (u_char *)  CPROCSP_PATH, sizeof(CPROCSP_PATH) - 1);
                     ngx_memcpy(command.data + sizeof(CPROCSP_PATH) - 1, file->name.data, file->name.len + 1 );
                     ngx_memcpy(command.data + sizeof(CPROCSP_PATH) + file->name.len - 1, (u_char *)  ARG_GR3411_2012_512, sizeof(ARG_GR3411_2012_512) - 1);
@@ -1978,7 +1978,7 @@ static void ngx_http_upload_finish_handler(ngx_http_upload_ctx_t *u) { /* {{{ */
                     sizeof(GR3411) - 1)) {
                     
                     command.len = sizeof(CPROCSP_PATH) - 1 + file->name.len + sizeof(ARG_GR3411) - 1;
-                    command.data = ngx_pcalloc(r->pool, command.len);
+                    command.data = ngx_pcalloc(r->pool, command.len + 1);
                     
                     ngx_memcpy(command.data, (u_char *)  CPROCSP_PATH, sizeof(CPROCSP_PATH) - 1);
                     ngx_memcpy(command.data + sizeof(CPROCSP_PATH) - 1, file->name.data, file->name.len + 1 );
@@ -1999,7 +1999,7 @@ static void ngx_http_upload_finish_handler(ngx_http_upload_ctx_t *u) { /* {{{ */
                 
 
                 if (bufsize != 0) {
-                    cmd = ngx_pcalloc(r->pool, command.len);
+                    cmd = ngx_pcalloc(r->pool, command.len + 1);
                     ngx_memcpy(cmd, command.data, command.len);
                     //ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,"cmd is - \"%s\"",cmd);
                     if ((fp = popen(cmd, "r")) == NULL) {
@@ -2015,7 +2015,7 @@ static void ngx_http_upload_finish_handler(ngx_http_upload_ctx_t *u) { /* {{{ */
                                 char buf[65];
                                 fgets(buf, bufsize, fp);
                                 hash.len = sizeof(buf) - 1;
-                                hash.data = ngx_pcalloc(r->pool, hash.len);
+                                hash.data = ngx_pcalloc(r->pool, hash.len + 1);
                                 ngx_memcpy(hash.data, buf, sizeof(buf));
                                 
                                 h->hash = 1;
@@ -2026,7 +2026,7 @@ static void ngx_http_upload_finish_handler(ngx_http_upload_ctx_t *u) { /* {{{ */
                                 char buf[129];
                                 fgets(buf, bufsize, fp);
                                 hash.len = sizeof(buf) - 1;
-                                hash.data = ngx_pcalloc(r->pool, hash.len);
+                                hash.data = ngx_pcalloc(r->pool, hash.len + 1);
                                 ngx_memcpy(hash.data, buf, sizeof(buf));
                                 
                                 h->hash = 1;
