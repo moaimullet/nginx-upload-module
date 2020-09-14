@@ -2580,6 +2580,7 @@ ngx_http_upload_create_loc_conf(ngx_conf_t *cf)
     conf->forward_args = NGX_CONF_UNSET;
     conf->tame_arrays = NGX_CONF_UNSET;
     conf->resumable_uploads = NGX_CONF_UNSET;
+    conf->calculate_gost_hash = NGX_CONF_UNSET;
     conf->empty_field_names = NGX_CONF_UNSET;
 
     conf->buffer_size = NGX_CONF_UNSET_SIZE;
