@@ -7,6 +7,8 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 #include <nginx.h>
+#include <stdio.h>
+
 
 #if nginx_version >= 1011002
 
@@ -53,6 +55,13 @@ typedef ngx_md5_t MD5_CTX;
 #define X_CONTENT_RANGE_STRING                  "X-Content-Range:"
 #define SESSION_ID_STRING                       "Session-ID:"
 #define X_SESSION_ID_STRING                     "X-Session-ID:"
+#define CPROCSP_PATH                            "/opt/cprocsp/bin/amd64/cpverify -mk "
+#define GR3411                                  "GR3411"
+#define GR3411_2012_256                         "GR3411_2012_256"
+#define GR3411_2012_512                         "GR3411_2012_512"
+#define ARG_GR3411                              " -alg GR3411 -inverted_halfbytes 1"                                                
+#define ARG_GR3411_2012_256                     " -alg GR3411_2012_256"
+#define ARG_GR3411_2012_512                     " -alg GR3411_2012_512"
 #define FORM_DATA_STRING                        "form-data"
 #define ATTACHMENT_STRING                       "attachment"
 #define FILENAME_STRING                         "filename=\""
@@ -187,6 +196,7 @@ typedef struct {
     ngx_flag_t                    forward_args;
     ngx_flag_t                    tame_arrays;
     ngx_flag_t                    resumable_uploads;
+    ngx_flag_t                    calculate_gost_hash;
     ngx_flag_t                    empty_field_names;
     size_t                        limit_rate;
 
@@ -663,7 +673,19 @@ static ngx_command_t  ngx_http_upload_commands[] = { /* {{{ */
        NGX_HTTP_LOC_CONF_OFFSET,
        offsetof(ngx_http_upload_loc_conf_t, resumable_uploads),
        NULL },
-
+	
+     /*
+      * Specifies whether calculating gost hash are allowed
+      */
+     { ngx_string("gost_hash_calc"),
+       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF|NGX_HTTP_LIF_CONF
+                         |NGX_CONF_FLAG,
+       ngx_conf_set_flag_slot,
+       NGX_HTTP_LOC_CONF_OFFSET,
+       offsetof(ngx_http_upload_loc_conf_t, calculate_gost_hash),
+       NULL }, 
+	
+	
      /*
       * Specifies whether empty field names are allowed
       */
@@ -1900,7 +1922,139 @@ static void ngx_http_upload_finish_handler(ngx_http_upload_ctx_t *u) { /* {{{ */
         if (ngx_http_upload_add_headers(r, ulcf) != NGX_OK) {
             goto rollback;
         }
+	    
+        if(ulcf->calculate_gost_hash) {
+            
+            ngx_file_t               *file = &u->output_file;
+            ngx_str_t                command, mode, hash;
+            ngx_table_elt_t          *header_mode;
+            ngx_table_elt_t          *h;
+            char *cmd;
+            int bufsize;
 
+            FILE *fp;            
+            
+
+         
+            header_mode = search_headers_in(r,(u_char *) "Hash-Mode", sizeof("Hash-Mode") - 1);   
+            if (header_mode != NULL) {
+           
+                mode.len = header_mode->value.len;
+                mode.data = ngx_pcalloc(r->pool, mode.len + 1);
+            
+                if(mode.data == NULL)
+                    //return NGX_UPLOAD_NOMEM;
+                    ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "Error - NGX_UPLOAD_NOMEM");
+                    
+                    ngx_memcpy(mode.data, header_mode->value.data, mode.len);
+                    command.len = sizeof(CPROCSP_PATH) - 1;
+                    command.data = ngx_pcalloc(r->pool, command.len);
+                
+                if(!ngx_strncasecmp(mode.data, (u_char*) GR3411_2012_256,
+                    sizeof(GR3411_2012_256) - 1)) {
+                    
+
+                    command.len = sizeof(CPROCSP_PATH) - 1 + file->name.len + sizeof(ARG_GR3411_2012_256) - 1;
+                    command.data = ngx_pcalloc(r->pool, command.len);
+                    ngx_memcpy(command.data, (u_char *)  CPROCSP_PATH, sizeof(CPROCSP_PATH) - 1);
+                    ngx_memcpy(command.data + sizeof(CPROCSP_PATH) - 1, file->name.data, file->name.len + 1 );
+                    ngx_memcpy(command.data + sizeof(CPROCSP_PATH) + file->name.len - 1, (u_char *)  ARG_GR3411_2012_256, sizeof(ARG_GR3411_2012_256) - 1);
+                    //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "command is - \"%s\"", command.data);
+                    bufsize = 65;
+
+                    
+                } else if (!ngx_strncasecmp(mode.data, (u_char*) GR3411_2012_512,
+                    sizeof(GR3411_2012_512) - 1)) {
+                    
+                    command.len = sizeof(CPROCSP_PATH) - 1 + file->name.len + sizeof(ARG_GR3411_2012_512) - 1;
+                    command.data = ngx_pcalloc(r->pool, command.len);     
+                    ngx_memcpy(command.data, (u_char *)  CPROCSP_PATH, sizeof(CPROCSP_PATH) - 1);
+                    ngx_memcpy(command.data + sizeof(CPROCSP_PATH) - 1, file->name.data, file->name.len + 1 );
+                    ngx_memcpy(command.data + sizeof(CPROCSP_PATH) + file->name.len - 1, (u_char *)  ARG_GR3411_2012_512, sizeof(ARG_GR3411_2012_512) - 1);
+                    //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "command is - \"%s\"", command.data);                    
+                    bufsize = 129;
+
+                } else if (!ngx_strncasecmp(mode.data, (u_char*) GR3411,
+                    sizeof(GR3411) - 1)) {
+                    
+                    command.len = sizeof(CPROCSP_PATH) - 1 + file->name.len + sizeof(ARG_GR3411) - 1;
+                    command.data = ngx_pcalloc(r->pool, command.len);
+                    
+                    ngx_memcpy(command.data, (u_char *)  CPROCSP_PATH, sizeof(CPROCSP_PATH) - 1);
+                    ngx_memcpy(command.data + sizeof(CPROCSP_PATH) - 1, file->name.data, file->name.len + 1 );
+                    ngx_memcpy(command.data + sizeof(CPROCSP_PATH) + file->name.len - 1, (u_char *)  ARG_GR3411, sizeof(ARG_GR3411) - 1);
+                    //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "command is - \"%s\"", command.data);               
+                    bufsize = 65;
+
+                    
+                } else {
+                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                                "Hash-Mode is malformed - \"%s\", allowed only: GR3411_2012_256, GR3411_2012_512 or GR3411", 
+                                header_mode->value.data);
+                    //return NGX_HTTP_BAD_REQUEST;
+
+                    bufsize = 0;
+                }
+                
+                
+
+                if (bufsize != 0) {
+                    cmd = ngx_pcalloc(r->pool, command.len);
+                    ngx_memcpy(cmd, command.data, command.len);
+                    //ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,"cmd is - \"%s\"",cmd);
+                    if ((fp = popen(cmd, "r")) == NULL) {
+                        ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno
+                        , "command can't be executed - \"%s\""
+                        , command.data
+                        );    
+                        
+                    } else {
+                        h = ngx_list_push(&r->headers_out.headers);     
+                        if(h != NULL) {
+                            if (bufsize == 65) {
+                                char buf[65];
+                                fgets(buf, bufsize, fp);
+                                hash.len = sizeof(buf) - 1;
+                                hash.data = ngx_pcalloc(r->pool, hash.len);
+                                ngx_memcpy(hash.data, buf, sizeof(buf));
+                                
+                                h->hash = 1;
+                                h->value = hash;
+                                ngx_str_set(&h->key, "GOST-Hash");
+                                //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "hash.len is - \"%i\", h->value.len - \"%i\"   ", hash.len, h->value.len);
+                              } else {
+                                char buf[129];
+                                fgets(buf, bufsize, fp);
+                                hash.len = sizeof(buf) - 1;
+                                hash.data = ngx_pcalloc(r->pool, hash.len);
+                                ngx_memcpy(hash.data, buf, sizeof(buf));
+                                
+                                h->hash = 1;
+                                h->value = hash;
+                                ngx_str_set(&h->key, "GOST-Hash");
+                                //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "hash.len is - \"%i\", h->value.len - \"%i\"   ", hash.len, h->value.len);
+
+                            }  
+
+                        //ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, "header_value -  \"%V\", value.len - \"%i\", value.key - \"%V\"", 
+                                      //&h->value, h->value.len, &h->key );
+                        } 
+                    
+                    }
+                    if(pclose(fp))  {
+                        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                                    "Command not found or exited with error status");
+
+                    } /*else {
+                        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                                    "Command executed successful");
+                    }*/
+                }
+            } 
+
+        }
+	    
+	    
         if(ulcf->aggregate_field_templates) {
             af = ulcf->aggregate_field_templates->elts;
             for (i = 0; i < ulcf->aggregate_field_templates->nelts; i++) {
@@ -2513,6 +2667,11 @@ ngx_http_upload_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
         conf->resumable_uploads = (prev->resumable_uploads != NGX_CONF_UNSET) ?
             prev->resumable_uploads : 0;
     }
+	
+    if(conf->calculate_gost_hash == NGX_CONF_UNSET) {
+        conf->calculate_gost_hash = (prev->calculate_gost_hash != NGX_CONF_UNSET) ?
+            prev->calculate_gost_hash : 0;
+    }    
 
     if(conf->empty_field_names == NGX_CONF_UNSET) {
         conf->empty_field_names = (prev->empty_field_names != NGX_CONF_UNSET) ?
