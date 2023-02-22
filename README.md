@@ -1,8 +1,8 @@
 nginx-upload-module
 ===================
 
-This module is based on Nginx upload module (v 2.2.0) http://www.grid.net.ru/nginx/upload.en.html. ...
-Since it seems the author has not maintained that module. I changed some codes that can be installed with latest nginx.
+(hongzhidao) This module is based on Nginx upload module (v 2.2.0) http://www.grid.net.ru/nginx/upload.en.html. ...
+(hongzhidao) Since it seems the author has not maintained that module. I changed some codes that can be installed with latest nginx.
 
 - install (static) 
 ./configure --add-module={module_dir} && make && make install
