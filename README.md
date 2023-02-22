@@ -27,7 +27,7 @@ protocol.
     * [upload_pass_args](#upload_pass_args)
 * [Example configuration](#example-configuration)
 * [License](#license)
-* [Credits and more info](#credits and more info)
+* [Credits and more info](#credits-and-more-info)
 
 ## Description
 
@@ -364,8 +364,7 @@ downloaded from this site.
 - [fdintino/nginx-upload-module](https://github.com/fdintino/nginx-upload-module) More recent(?) maintainer.
 - [hongzhidao/nginx-upload-module](https://github.com/hongzhidao/nginx-upload-module) Separate repo based on grid.net.ru source.
 
-Readme from hongzhidao
-===================
+### Readme from hongzhidao
 
 This module is based on Nginx upload module (v 2.2.0) http://www.grid.net.ru/nginx/upload.en.html. ...  
 Since it seems the author has not maintained that module. I changed some codes that can be installed with latest nginx.
