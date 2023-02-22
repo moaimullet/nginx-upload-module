@@ -27,6 +27,7 @@ protocol.
     * [upload_pass_args](#upload_pass_args)
 * [Example configuration](#example-configuration)
 * [License](#license)
+* [Credits and more info](#credits and more info)
 
 ## Description
 
@@ -357,7 +358,13 @@ license, you must immediately remove from your computer all materials
 downloaded from this site.
 
 
-[hongzhidao/nginx-upload-module](https://github.com/hongzhidao/nginx-upload-module)
+## Credits and more info
+
+- [vkholodkov/nginx-upload-module](https://github.com/vkholodkov/nginx-upload-module) Original grid.net.ru source.
+- [fdintino/nginx-upload-module](https://github.com/fdintino/nginx-upload-module) More recent(?) maintainer.
+- [hongzhidao/nginx-upload-module](https://github.com/hongzhidao/nginx-upload-module) Separate repo based on grid.net.ru source.
+
+Readme from hongzhidao
 ===================
 
 This module is based on Nginx upload module (v 2.2.0) http://www.grid.net.ru/nginx/upload.en.html. ...  
