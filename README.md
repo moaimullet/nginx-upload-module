@@ -1,7 +1,5 @@
-# nginx-upload-module
-
-[![Build Status](https://travis-ci.org/fdintino/nginx-upload-module.svg?branch=master)](https://travis-ci.org/fdintino/nginx-upload-module)
-[![codecov](https://codecov.io/gh/fdintino/nginx-upload-module/branch/master/graph/badge.svg)](https://codecov.io/gh/fdintino/nginx-upload-module)
+nginx-upload-module
+===================
 
 A module for [nginx](https://www.nginx.com/) for handling file uploads using
 multipart/form-data encoding ([RFC 1867](http://www.ietf.org/rfc/rfc1867.txt))
@@ -29,6 +27,7 @@ protocol.
     * [upload_pass_args](#upload_pass_args)
 * [Example configuration](#example-configuration)
 * [License](#license)
+* [Credits and more info](#credits-and-more-info)
 
 ## Description
 
@@ -166,7 +165,6 @@ Usage example:
 ```nginx
 upload_aggregate_form_field $upload_field_name.md5 "$upload_file_md5";
 upload_aggregate_form_field $upload_field_name.size "$upload_file_size";
-
 ```
 
 ### upload_pass_form_field
@@ -193,7 +191,6 @@ For PCRE-unaware environments:
 ```nginx
 upload_pass_form_field "submit";
 upload_pass_form_field "description";
-
 ```
 
 ### upload_cleanup
@@ -297,9 +294,7 @@ location /upload/ {
     upload_pass /internal_upload/;
     upload_pass_args on;
 }
-
 # ...
-
 location /internal_upload/ {
     # ...
     proxy_pass http://backend;
@@ -315,33 +310,33 @@ In this example backend gets request URI "/upload?id=5". In case of
 server {
     client_max_body_size 100m;
     listen 80;
-
+	
     # Upload form should be submitted to this location
     location /upload/ {
         # Pass altered request body to this location
         upload_pass @test;
-
+		
         # Store files to this directory
         # The directory is hashed, subdirectories 0 1 2 3 4 5 6 7 8 9 should exist
         upload_store /tmp 1;
-
+		
         # Allow uploaded files to be read only by user
         upload_store_access user:r;
-
+		
         # Set specified fields in request body
         upload_set_form_field $upload_field_name.name "$upload_file_name";
         upload_set_form_field $upload_field_name.content_type "$upload_content_type";
         upload_set_form_field $upload_field_name.path "$upload_tmp_path";
-
+		
         # Inform backend about hash and size of a file
         upload_aggregate_form_field "$upload_field_name.md5" "$upload_file_md5";
         upload_aggregate_form_field "$upload_field_name.size" "$upload_file_size";
-
+		
         upload_pass_form_field "^submit$|^description$";
-
+		
         upload_cleanup 400 404 499 500-505;
     }
-
+	
     # Pass altered request body to a backend
     location @test {
         proxy_pass http://localhost:8080;
@@ -369,3 +364,65 @@ from this site you automatically agree to the terms and conditions of
 this license. If you don't agree to the terms and conditions of this
 license, you must immediately remove from your computer all materials
 downloaded from this site.
+
+
+## Credits and more info
+
+- [vkholodkov/nginx-upload-module](https://github.com/vkholodkov/nginx-upload-module) Original grid.net.ru source.
+- [fdintino/nginx-upload-module](https://github.com/fdintino/nginx-upload-module) More recent(?) maintainer.
+- [hongzhidao/nginx-upload-module](https://github.com/hongzhidao/nginx-upload-module) Separate repo based on grid.net.ru source.
+
+### Readme from hongzhidao
+
+This module is based on Nginx upload module (v 2.2.0) http://www.grid.net.ru/nginx/upload.en.html. ...  
+Since it seems the author has not maintained that module. I changed some codes that can be installed with latest nginx.
+
+- install (static) 
+./configure --add-module={module_dir} && make && make install
+
+- install (dynamic) 
+./configure --with-compat --add-dynamic-module={module_dir} && make modules
+
+- conf
+```
+server {
+    listen       80;
+    client_max_body_size 100m;
+
+    location / {
+        root  html/upload;
+    }
+
+    # Upload form should be submitted to this location
+    location /upload {
+        # Pass altered request body to this location
+        upload_pass   /example.php;
+
+        # Store files to this directory
+        # The directory is hashed, subdirectories 0 1 2 3 4 5 6 7 8 9 should exist
+        upload_store /tmp/upload 1;
+
+        # Allow uploaded files to be read only by user
+        upload_store_access user:r;
+
+        # Set specified fields in request body
+        upload_set_form_field "${upload_field_name}_name" $upload_file_name;
+        upload_set_form_field "${upload_field_name}_content_type" $upload_content_type;
+        upload_set_form_field "${upload_field_name}_path" $upload_tmp_path;
+
+        # Inform backend about hash and size of a file
+        upload_aggregate_form_field "${upload_field_name}_md5" $upload_file_md5;
+        upload_aggregate_form_field "${upload_field_name}_size" $upload_file_size;
+
+        upload_pass_form_field "^submit$|^description$";
+    }
+
+    location ~ \.php$ {
+        root           html/upload;
+        fastcgi_pass   127.0.0.1:9000;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        include        fastcgi_params;
+    }
+}
+```
