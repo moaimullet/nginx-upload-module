@@ -1,15 +1,16 @@
-USE_MD5=YES
-USE_SHA1=YES
+USE_MD5=NO
+USE_SHA1=NO
 USE_OPENSSL=YES
 ngx_addon_name=ngx_http_upload_module
+addon_srcs="$ngx_addon_dir/ngx_http_upload_module.c"
 
 if test -n "$ngx_module_link"; then
 	ngx_module_type=HTTP
 	ngx_module_name=$ngx_addon_name
-	ngx_module_srcs="$ngx_addon_dir/ngx_http_upload_module.c"
+	ngx_module_srcs=$addon_srcs
 
 	. auto/module
 else
 	HTTP_MODULES="$HTTP_MODULES $ngx_addon_name"
-	NGX_ADDON_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/ngx_http_upload_module.c"
+	NGX_ADDON_SRCS="$NGX_ADDON_SRCS $addon_srcs"
 fi
