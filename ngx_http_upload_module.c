@@ -39,26 +39,25 @@
 #if defined MD5_FROM_NGX
 typedef ngx_md5_t    MD5_t;
 #define MD5_DIGEST_LENGTH    16
-#define MD5New(mdctx)              MD5_t MD5Obj; \
-                                   MD5_t *mdctx = &MD5Obj
+#define MD5New(mdctx)              *mdctx = ngx_palloc(r->pool, sizeof(ngx_md5_t))
 #define MD5Init(mdctx)             ngx_md5_init(mdctx)
 #define MD5Update                  ngx_md5_update
-#define MD5Final(mdctx,md5digest)  ngx_md5_final(md5digest,mdctx)
+#define MD5Final(md5digest,mdctx)  ngx_md5_final(md5digest,mdctx)
 #define MD5Cleanup(mdctx)          //No cleanup
 #else
-typedef MD5_CTX    MD5_t;
 #if (OPENSSL_VERSION_MAJOR >= 3)
-#define MD5New(mdctx)              EVP_MD_CTX *mdctx = EVP_MD_CTX_new()
+typedef EVP_MD_CTX   MD5_t;
+#define MD5New(mdctx)              *mdctx = EVP_MD_CTX_new()
 #define MD5Init(mdctx)             EVP_DigestInit_ex(mdctx, EVP_md5(), NULL)
 #define MD5Update                  EVP_DigestUpdate
-#define MD5Final(mdctx,md5digest)  EVP_DigestFinal_ex(mdctx, md5digest, MD5_DIGEST_LENGTH * 2)
+#define MD5Final(md5digest,mdctx)  EVP_DigestFinal_ex(mdctx, md5digest, NULL)
 #define MD5Cleanup(mdctx)          EVP_MD_CTX_free(mdctx)
 #else
-#define MD5New(mdctx)              MD5_t MD5Obj; \
-                                   MD5_t *mdctx = &MD5Obj;
+typedef MD5_CTX      MD5_t;
+#define MD5New(mdctx)              *mdctx = ngx_palloc(r->pool, sizeof(MD5_CTX))
 #define MD5Init(mdctx)             MD5_Init(mdctx)
 #define MD5Update                  MD5_Update
-#define MD5Final(mdctx,md5digest)  MD5_Final(md5digest,mdctx)
+#define MD5Final(md5digest,mdctx)  MD5_Final(md5digest,mdctx)
 #define MD5Cleanup(mdctx)          //No cleanup
 #endif // OpenSSL >= 3?
 #endif // MD5_FROM_NGX?
@@ -66,57 +65,56 @@ typedef MD5_CTX    MD5_t;
 #if defined SHA1_FROM_NGX
 typedef ngx_sha1_t   SHA1_t;
 #define SHA_DIGEST_LENGTH    20
-#define SHA1New(shactx)              SHA1_t SHAObj; \
-                                     SHA1_t *shactx = &SHAObj
+#define SHA1New(shactx)              *shactx = ngx_palloc(r->pool, sizeof(ngx_sha1_t))
 #define SHA1Init(shactx)             ngx_sha1_init(shactx)
 #define SHA1Update                   ngx_sha1_update
-#define SHA1Final(shactx,shadigest)  ngx_sha1_final(shadigest,shactx)
+#define SHA1Final(shadigest,shactx)  ngx_sha1_final(shadigest,shactx)
 #define SHA1Cleanup(shactx)          //No cleanup
 #else
-typedef SHA_CTX    SHA1_t;
 #if (OPENSSL_VERSION_MAJOR >= 3)
-#define SHA1New(shactx)              EVP_MD_CTX *shactx = EVP_MD_CTX_new()
+typedef EVP_MD_CTX   SHA1_t;
+#define SHA1New(shactx)              *shactx = EVP_MD_CTX_new()
 #define SHA1Init(shactx)             EVP_DigestInit_ex(shactx, EVP_sha1(), NULL)
 #define SHA1Update                   EVP_DigestUpdate
-#define SHA1Final(shactx,shadigest)  EVP_DigestFinal_ex(shactx, shadigest, SHA_DIGEST_LENGTH * 2)
+#define SHA1Final(shadigest,shactx)  EVP_DigestFinal_ex(shactx, shadigest, NULL)
 #define SHA1Cleanup(shactx)          EVP_MD_CTX_free(shactx)
 #else
-#define SHA1New(shactx)              SHA1_t SHAObj; \
-                                     SHA1_t *shactx = &SHAObj;
+typedef SHA_CTX      SHA1_t;
+#define SHA1New(shactx)              *shactx = ngx_palloc(r->pool, sizeof(SHA_CTX))
 #define SHA1Init(shactx)             SHA1_Init(shactx)
 #define SHA1Update                   SHA1_Update
-#define SHA1Final(shactx,shadigest)  SHA1_Final(shadigest,shactx)
+#define SHA1Final(shadigest,shactx)  SHA1_Final(shadigest,shactx)
 #define SHA1Cleanup(shactx)          //No cleanup
 #endif // OpenSSL >= 3?
 #endif /* SHA1_FROM_NGX? */
 
 #if defined OPENSSL_SHA_H
 // We got SHA-2 functions
-typedef SHA256_CTX SHA256_t;
-typedef SHA512_CTX SHA512_t;
 #if (OPENSSL_VERSION_MAJOR >= 3)
-#define SHA256New(shactx)              EVP_MD_CTX *shactx = EVP_MD_CTX_new()
+typedef EVP_MD_CTX SHA256_t;
+typedef EVP_MD_CTX SHA512_t;
+#define SHA256New(shactx)              *shactx = EVP_MD_CTX_new()
 #define SHA256Init(shactx)             EVP_DigestInit_ex(shactx, EVP_sha256(), NULL)
 #define SHA256Update                   EVP_DigestUpdate
-#define SHA256Final(shactx,shadigest)  EVP_DigestFinal_ex(shactx, shadigest, SHA256_DIGEST_LENGTH * 2)
+#define SHA256Final(shadigest,shactx)  EVP_DigestFinal_ex(shactx, shadigest, NULL)
 #define SHA256Cleanup(shactx)          EVP_MD_CTX_free(shactx)
-#define SHA512New(shactx)              EVP_MD_CTX *shactx = EVP_MD_CTX_new()
+#define SHA512New(shactx)              *shactx = EVP_MD_CTX_new()
 #define SHA512Init(shactx)             EVP_DigestInit_ex(shactx, EVP_sha512(), NULL)
 #define SHA512Update                   EVP_DigestUpdate
-#define SHA512Final(shactx,shadigest)  EVP_DigestFinal_ex(shactx, shadigest, SHA512_DIGEST_LENGTH * 2)
+#define SHA512Final(shadigest,shactx)  EVP_DigestFinal_ex(shactx, shadigest, NULL)
 #define SHA512Cleanup(shactx)          EVP_MD_CTX_free(shactx)
 #else
-#define SHA256New(shactx)              SHA256_t SHAObj; \
-                                       SHA256_t *shactx = &SHAObj;
+typedef SHA256_CTX SHA256_t;
+typedef SHA512_CTX SHA512_t;
+#define SHA256New(shactx)              *shactx = ngx_palloc(r->pool, sizeof(SHA256_CTX))
 #define SHA256Init(shactx)             SHA256_Init(shactx)
 #define SHA256Update                   SHA256_Update
-#define SHA256Final(shactx,shadigest)  SHA256_Final(shadigest,shactx)
+#define SHA256Final(shadigest,shactx)  SHA256_Final(shadigest,shactx)
 #define SHA256Cleanup(shactx)          //No cleanup
-#define SHA512New(shactx)              SHA512_t SHAObj; \
-                                       SHA512_t *shactx = &SHAObj;
+#define SHA512New(shactx)              *shactx = ngx_palloc(r->pool, sizeof(SHA512_CTX))
 #define SHA512Init(shactx)             SHA512_Init(shactx)
 #define SHA512Update                   SHA512_Update
-#define SHA512Final(shactx,shadigest)  SHA512_Final(shadigest,shactx)
+#define SHA512Final(shadigest,shactx)  SHA512_Final(shadigest,shactx)
 #define SHA512Cleanup(shactx)          //No cleanup
 #endif // OpenSSL >= 3?
 #endif // OPENSSL_SHA_H?
@@ -266,22 +264,22 @@ typedef struct {
 } ngx_http_upload_loc_conf_t;
 
 typedef struct ngx_http_upload_md5_ctx_s {
-    MD5_t       md5;
+    MD5_t       *md5;
     u_char      md5_digest[MD5_DIGEST_LENGTH * 2];
 } ngx_http_upload_md5_ctx_t;
 
 typedef struct ngx_http_upload_sha1_ctx_s {
-    SHA1_t      sha1;
+    SHA1_t      *sha1;
     u_char      sha1_digest[SHA_DIGEST_LENGTH * 2];
 } ngx_http_upload_sha1_ctx_t;
 
 typedef struct ngx_http_upload_sha256_ctx_s {
-    SHA256_t    sha256;
+    SHA256_t    *sha256;
     u_char      sha256_digest[SHA256_DIGEST_LENGTH * 2];
 } ngx_http_upload_sha256_ctx_t;
 
 typedef struct ngx_http_upload_sha512_ctx_s {
-    SHA512_t    sha512;
+    SHA512_t    *sha512;
     u_char      sha512_digest[SHA512_DIGEST_LENGTH * 2];
 } ngx_http_upload_sha512_ctx_t;
 
@@ -417,7 +415,7 @@ static ngx_int_t ngx_http_upload_merge_ranges(ngx_http_upload_ctx_t *u, ngx_http
 static ngx_int_t ngx_http_upload_parse_range(ngx_str_t *range, ngx_http_upload_range_t *range_n);
 
 static void ngx_http_read_upload_client_request_body_handler(ngx_http_request_t *r);
-static ngx_int_t ngx_http_do_read_upload_client_request_body(ngx_http_request_t *r);
+//static ngx_int_t ngx_http_do_read_upload_client_request_body(ngx_http_request_t *r);
 static ngx_int_t ngx_http_process_request_body(ngx_http_request_t *r, ngx_chain_t *body);
 
 static ngx_int_t ngx_http_read_upload_client_request_body(ngx_http_request_t *r);
@@ -921,9 +919,11 @@ ngx_http_upload_handler(ngx_http_request_t *r)
     if(ulcf->md5) {
         if(u->md5_ctx == NULL) {
             u->md5_ctx = ngx_palloc(r->pool, sizeof(ngx_http_upload_md5_ctx_t));
+			MD5New(&u->md5_ctx->md5);
             if (u->md5_ctx == NULL) {
                 return NGX_HTTP_INTERNAL_SERVER_ERROR;
             }
+			// !!!!
         }
     }else
         u->md5_ctx = NULL;
@@ -1481,7 +1481,7 @@ static ngx_int_t ngx_http_upload_start_handler(ngx_http_upload_ctx_t *u) { /* {{
     ngx_file_t  *file = &u->output_file;
     ngx_path_t  *path = u->store_path;
     ngx_path_t  *state_path = u->state_store_path;
-    uint32_t    n;
+    //uint32_t    n;
     ngx_uint_t  i;
     ngx_int_t   rc;
     ngx_http_upload_field_template_t    *t;
@@ -1594,17 +1594,18 @@ static ngx_int_t ngx_http_upload_start_handler(ngx_http_upload_ctx_t *u) { /* {{
             }
         }
 
+		// !!!!
         if(u->md5_ctx != NULL)
-             (&u->md5_ctx->md5);
-
+            MD5Init(u->md5_ctx->md5);
+		
         if(u->sha1_ctx != NULL)
-            SHA1_Init(&u->sha1_ctx->sha1);
+            SHA1Init(u->sha1_ctx->sha1);
 
         if(u->sha256_ctx != NULL)
-            SHA256_Init(&u->sha256_ctx->sha256);
+            SHA256Init(u->sha256_ctx->sha256);
 
         if(u->sha512_ctx != NULL)
-            SHA512_Init(&u->sha512_ctx->sha512);
+            SHA512Init(u->sha512_ctx->sha512);
 
         if(u->calculate_crc32)
             ngx_crc32_init(u->crc32);
@@ -1699,16 +1700,16 @@ static void ngx_http_upload_finish_handler(ngx_http_upload_ctx_t *u) { /* {{{ */
         ngx_close_file(u->output_file.fd);
 
         if(u->md5_ctx)
-            MD5Final(u->md5_ctx->md5_digest, &u->md5_ctx->md5);
+            MD5Final(u->md5_ctx->md5_digest, u->md5_ctx->md5);
 
         if(u->sha1_ctx)
-            SHA1_Final(u->sha1_ctx->sha1_digest, &u->sha1_ctx->sha1);
+            SHA1Final(u->sha1_ctx->sha1_digest, u->sha1_ctx->sha1);
 
         if(u->sha256_ctx)
-            SHA256_Final(u->sha256_ctx->sha256_digest, &u->sha256_ctx->sha256);
+            SHA256Final(u->sha256_ctx->sha256_digest, u->sha256_ctx->sha256);
 
         if(u->sha512_ctx)
-            SHA512_Final(u->sha512_ctx->sha512_digest, &u->sha512_ctx->sha512);
+            SHA512Final(u->sha512_ctx->sha512_digest, u->sha512_ctx->sha512);
 
         if(u->calculate_crc32)
             ngx_crc32_final(u->crc32);
@@ -1853,16 +1854,16 @@ static ngx_int_t ngx_http_upload_flush_output_buffer(ngx_http_upload_ctx_t *u, u
         }
 
         if(u->md5_ctx)
-            MD5Update(&u->md5_ctx->md5, buf, len);
+            MD5Update(u->md5_ctx->md5, buf, len);
 
         if(u->sha1_ctx)
-            SHA1_Update(&u->sha1_ctx->sha1, buf, len);
+            SHA1Update(u->sha1_ctx->sha1, buf, len);
 
         if(u->sha256_ctx)
-            SHA256_Update(&u->sha256_ctx->sha256, buf, len);
+            SHA256Update(u->sha256_ctx->sha256, buf, len);
 
         if(u->sha512_ctx)
-            SHA512_Update(&u->sha512_ctx->sha512, buf, len);
+            SHA512Update(u->sha512_ctx->sha512, buf, len);
 
         if(u->calculate_crc32)
             ngx_crc32_update(&u->crc32, buf, len);
@@ -3451,7 +3452,8 @@ ngx_http_read_upload_client_request_body_handler(ngx_http_request_t *r)
     }
 }
 
-static ngx_int_t /* {{{ ngx_http_do_read_upload_client_request_body */
+/*
+static ngx_int_t // {{{ ngx_http_do_read_upload_client_request_body
 ngx_http_do_read_upload_client_request_body(ngx_http_request_t *r)
 {
     ssize_t                     size, n, limit;
@@ -3601,7 +3603,8 @@ ngx_http_do_read_upload_client_request_body(ngx_http_request_t *r)
     upload_shutdown_ctx(u);
 
     return ngx_http_upload_body_handler(r);
-} /* }}} */
+} // }}}
+*/
 
 static ngx_int_t
 ngx_http_process_request_body(ngx_http_request_t *r, ngx_chain_t *in)
