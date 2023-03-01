@@ -919,11 +919,13 @@ ngx_http_upload_handler(ngx_http_request_t *r)
     if(ulcf->md5) {
         if(u->md5_ctx == NULL) {
             u->md5_ctx = ngx_palloc(r->pool, sizeof(ngx_http_upload_md5_ctx_t));
-			MD5New(&u->md5_ctx->md5);
             if (u->md5_ctx == NULL) {
                 return NGX_HTTP_INTERNAL_SERVER_ERROR;
             }
-			// !!!!
+			MD5New(&u->md5_ctx->md5);
+            if (u->md5_ctx->md5 == NULL) {
+                return NGX_HTTP_INTERNAL_SERVER_ERROR;
+            }
         }
     }else
         u->md5_ctx = NULL;
@@ -932,6 +934,10 @@ ngx_http_upload_handler(ngx_http_request_t *r)
         if(u->sha1_ctx == NULL) {
             u->sha1_ctx = ngx_palloc(r->pool, sizeof(ngx_http_upload_sha1_ctx_t));
             if (u->sha1_ctx == NULL) {
+                return NGX_HTTP_INTERNAL_SERVER_ERROR;
+            }
+			SHA1New(&u->sha1_ctx->sha1);
+            if (u->sha1_ctx->sha1 == NULL) {
                 return NGX_HTTP_INTERNAL_SERVER_ERROR;
             }
         }
@@ -944,6 +950,10 @@ ngx_http_upload_handler(ngx_http_request_t *r)
             if (u->sha256_ctx == NULL) {
                 return NGX_HTTP_INTERNAL_SERVER_ERROR;
             }
+			SHA256New(&u->sha256_ctx->sha256);
+            if (u->sha256_ctx->sha256 == NULL) {
+                return NGX_HTTP_INTERNAL_SERVER_ERROR;
+            }
         }
     }else
         u->sha256_ctx = NULL;
@@ -952,6 +962,10 @@ ngx_http_upload_handler(ngx_http_request_t *r)
         if(u->sha512_ctx == NULL) {
             u->sha512_ctx = ngx_palloc(r->pool, sizeof(ngx_http_upload_sha512_ctx_t));
             if (u->sha512_ctx == NULL) {
+                return NGX_HTTP_INTERNAL_SERVER_ERROR;
+            }
+			SHA512New(&u->sha512_ctx->sha512);
+            if (u->sha512_ctx->sha512 == NULL) {
                 return NGX_HTTP_INTERNAL_SERVER_ERROR;
             }
         }
@@ -1594,7 +1608,6 @@ static ngx_int_t ngx_http_upload_start_handler(ngx_http_upload_ctx_t *u) { /* {{
             }
         }
 
-		// !!!!
         if(u->md5_ctx != NULL)
             MD5Init(u->md5_ctx->md5);
 		
@@ -3379,10 +3392,10 @@ ngx_http_read_upload_client_request_body(ngx_http_request_t *r)
 
     clock_t start, end;
     start = clock();
-    ngx_log_error(NGX_LOG_EMERG, r->connection->log, 0,"junhao read start: elapsed start: %8.7f", start / CLOCKS_PER_SEC);
+    ngx_log_error(NGX_LOG_EMERG, r->connection->log, 0,"read_upload_client_request_body read start: elapsed start: %8.7f", start / CLOCKS_PER_SEC);
     rc = ngx_http_do_read_client_request_body(r);
     end = clock();
-    ngx_log_error(NGX_LOG_EMERG, r->connection->log, 0,"junhao read end: elapsed: %8.7f", ((double) (end - start)) / CLOCKS_PER_SEC);
+    ngx_log_error(NGX_LOG_EMERG, r->connection->log, 0,"read_upload_client_request_body read end: elapsed: %8.7f", ((double) (end - start)) / CLOCKS_PER_SEC);
 
 done:
 
@@ -4490,7 +4503,7 @@ ngx_http_do_read_client_request_body(ngx_http_request_t *r)
     rb = r->request_body;
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
-                   "http read client request body");
+                   "do_read_client_request_body:");
 
     for ( ;; ) {
         for ( ;; ) {
@@ -4558,7 +4571,7 @@ ngx_http_do_read_client_request_body(ngx_http_request_t *r)
             n = c->recv(c, rb->buf->last, size);
 
             ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0,
-                           "http client request body recv %z", n);
+                           "do_read_client_request_body recv %z", n);
 
             if (n == NGX_AGAIN) {
                 break;
@@ -4601,7 +4614,7 @@ ngx_http_do_read_client_request_body(ngx_http_request_t *r)
         }
 
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0,
-                       "http client request body rest %O", rb->rest);
+                       "do_read_client_request_body rest %O", rb->rest);
 
         if (rb->rest == 0) {
             break;
